@@ -13,11 +13,13 @@ esEtiqueta = False
 errores = []
 
 def verifyMatch():
-    global contadorLineas, contadorErrores, tieneEnd, esEtiqueta
-    esEtiqueta = False
+    global contadorLineas, tieneEnd, esEtiqueta, errores
 
     for l in lineas:
+        esEtiqueta = False
         contadorLineas += 1
+        mnemonico = None
+        match = False
 
         if l.startswith((" ", "\t")):
             partes = l.split()
@@ -31,7 +33,7 @@ def verifyMatch():
             if len(partes) > 1:
                 mnemonico = partes[1]
 
-        if mnemonico.isupper() or mnemonico.islower():
+        if mnemonico and (mnemonico.isupper() or mnemonico.islower()):
             match = True if mnemonico.lower() in opcodes else False
 
         if not match and not esEtiqueta:
