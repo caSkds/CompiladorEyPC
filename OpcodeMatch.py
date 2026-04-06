@@ -9,11 +9,13 @@ with open("archivo.txt", "r") as f:
 
 tieneEnd = False
 contadorLineas = 0
-contadorErrores = 0
 esEtiqueta = False
 errores = []
 
 def verifyMatch():
+    global contadorLineas, contadorErrores, tieneEnd, esEtiqueta
+    esEtiqueta = False
+    
     for l in lineas:
         contadorLineas += 1
 
@@ -24,7 +26,7 @@ def verifyMatch():
             partes = l.split()
             etiqueta = partes[0]
 
-            if (etiqueta.isupper()) and (etiqueta in opcodes == None):
+            if etiqueta.isupper() and etiqueta not in opcodes:
                 esEtiqueta = True
             if len(partes) > 1:
                 mnemonico = partes[1]
@@ -33,7 +35,7 @@ def verifyMatch():
             match = True if mnemonico in opcodes else False
 
         if not match and not esEtiqueta:
-            errores[contadorErrores] = f"Línea {contadorLineas}: no se encontró el mnemónico {mnemonico}"
+            errores.append(f"Línea {contadorLineas}: no se encontró el mnemónico {mnemonico}")
 
         
 
