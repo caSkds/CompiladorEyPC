@@ -15,7 +15,7 @@ errores = []
 def verifyMatch():
     global contadorLineas, contadorErrores, tieneEnd, esEtiqueta
     esEtiqueta = False
-    
+
     for l in lineas:
         contadorLineas += 1
 
@@ -32,7 +32,7 @@ def verifyMatch():
                 mnemonico = partes[1]
 
         if mnemonico.isupper() or mnemonico.islower():
-            match = True if mnemonico in opcodes else False
+            match = True if mnemonico.lower() in opcodes else False
 
         if not match and not esEtiqueta:
             errores.append(f"Línea {contadorLineas}: no se encontró el mnemónico {mnemonico}")
