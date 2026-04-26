@@ -66,6 +66,7 @@ def getcompiledOperands():
     - Cada operando es un String
     """
     global compiledOperands
+    compileFile()
     return compiledOperands
 
 def convertOperand(operand):
@@ -268,7 +269,7 @@ def base2Compliment(number):
 
 
 
-def compileInstructions(preCompilation):
+def compileInstructionSet(preCompilation):
     global compiledOperands
     position = -1
     for i in preCompilation:
@@ -298,7 +299,7 @@ def compileFile():
     - Recorre cada línea del código, y dependiendo del tipo de instrucción, la compila y la agrega a la lista de instrucciones compiladas
     """
     preCompile()
-    compileInstructions(toCompileOperands)
+    compileInstructionSet(toCompileOperands)
 
 
 
