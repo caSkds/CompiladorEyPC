@@ -171,6 +171,8 @@ if __name__ == "__main__":
         print(f"Archivo a compilar: {RUTA}")
         """
 
-    printFile()
+    #printFile()
+    for line in lineas:
+        print(line.split())
     #print(type(lineas[0]))
     
