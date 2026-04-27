@@ -153,7 +153,10 @@ def compileInstructions():
         if mnemonico.lower() not in operandDict:
             continue
 
-        instruccion = [mnemonico] + resto
+        raw = " ".join(resto)
+        tokens = [x.strip() for x in raw.replace(",", " ").split()]
+
+        instruccion = [mnemonico] + tokens
         opcode = getOpcode(instruccion)
         operandos_hex = []
         # Capture operand hex values without appending to toCompileOperands yet
@@ -216,15 +219,15 @@ def getOpcode(line):
     return opcode
 
 def addOperandHex(line):
-    """
-    # Función para obtener el operando de una instrucción en hexadecimal
-    - Se encarga de determinar el tipo de direccionamiento de la instrucción, y devolver el operando correspondiente en hexadecimal
-    """
     global toCompileOperands    
-    operands = line[1:]
-    for i in operands:
-        if i== 'X' or i== 'Y':
+
+    raw = " ".join(line[1:])
+    tokens = [x.strip() for x in raw.split(",")]
+
+    for i in tokens:
+        if i == 'X' or i == 'Y':
             continue
+
         if any(subroutine.name == i for subroutine in subroutines):
             toCompileOperands.append(i)
         else:
@@ -331,15 +334,38 @@ def base2Compliment(number):
 
 
 def compileInstructionSet(preCompilation):
-    global compiledOperands
+    global compiledOperands, instructionList, subroutines
+
     position = -1
+
     for i in preCompilation:
         position += 1
+        try:
+            mnemonico = instructionList[position][3].split()[0].upper()
+        except:
+            mnemonico = ""
+
+        branchInstructions = [
+            "BRA","BEQ","BNE","BMI","BPL",
+            "BCC","BCS","BVC","BVS","BHI","BLS"
+        ]
+
         if any(subroutine.name == i for subroutine in subroutines):
-            if subRoutineHex(i, position) == False:
-                print(f"Error 007: Subrutina {i} fuera de rango")
-                return False
-            compiledOperands.append(subRoutineHex(i, position))
+            if mnemonico in branchInstructions:
+                salto = subRoutineHex(i, position)
+
+                if salto == False:
+                    print(f"Error 007: Subrutina {i} fuera de rango")
+                    return False
+
+                compiledOperands.append(salto)
+
+            else:
+                for s in subroutines:
+                    if s.name == i:
+                        direccion = format(s.posicion, '04X')
+                        compiledOperands.append(direccion)
+                        break
         else:
             compiledOperands.append(i)
 
@@ -381,8 +407,6 @@ def generateOutput(outputPath=None):
     """
     global instructionList, compiledOperands, START_ADDRESS, subroutines
 
-    # Resolver direccion de inicio
-    # Use first ORG address found
     try:
         currentAddress = int(START_ADDRESS, 16)
     except:
@@ -392,16 +416,13 @@ def generateOutput(outputPath=None):
     COL_WIDTH = 20
 
     for (etiqueta, opcode, operandos_hex, fuente) in instructionList:
-        # Linea de solo etiqueta
         if opcode is None:
             lines_out.append(" " * COL_WIDTH + etiqueta)
             continue
 
-        # Si hay etiqueta + instruccion, primero la etiqueta
         if etiqueta is not None:
             lines_out.append(" " * COL_WIDTH + etiqueta)
 
-        # Resolver placeholders de subrutinas en operandos
         operandos_resueltos = []
         for op in operandos_hex:
             if any(s.name == op for s in subroutines):
@@ -409,8 +430,6 @@ def generateOutput(outputPath=None):
                 skips = None
                 for s in subroutines:
                     if s.name == op:
-                        # posicion en toCompileOperands del destino
-                        # contar bytes hasta esa posicion
                         skips = s.posicion - (len(operandos_resueltos) + 1)
                 if skips is not None:
                     if skips >= 0:
@@ -420,14 +439,15 @@ def generateOutput(outputPath=None):
             else:
                 operandos_resueltos.append(op.upper() if op else "??")
 
-        # Construir bytes de la instruccion
-        # opcode puede ser "8B" (1 byte) o "18CE" (2 bytes prefijados)
+       
         opcode_bytes = [opcode[i:i+2] for i in range(0, len(str(opcode)), 2)] if isinstance(opcode, str) else [format(opcode, '02X')]
-        # operandos: cada string de 2 chars es 1 byte, 4 chars es 2 bytes
         operando_bytes = []
         for op in operandos_resueltos:
             for i in range(0, len(op), 2):
-                operando_bytes.append(op[i:i+2])
+                byte = op[i:i+2]
+                if len(byte) == 1:
+                    byte = "0" + byte
+                operando_bytes.append(byte)
 
         all_bytes = opcode_bytes + operando_bytes
         n_bytes = len(all_bytes)
