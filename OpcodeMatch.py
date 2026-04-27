@@ -14,6 +14,8 @@ SALTOS = {"bra", "beq", "bne", "blt", "ble", "bgt", "bge", "bhi", "bhs",
           "blo", "bls", "bmi", "bpl", "bvc", "bvs", "bcc", "bcs", "brn",
           "jmp", "jsr", "bsr", "brset", "brclr"}
 
+REFS_ETIQUETA = SALTOS
+
     
 def recolectarDeclaraciones(lineas):
     declaradas = set()
@@ -35,7 +37,7 @@ def recolectarDeclaraciones(lineas):
 
             if len(partes) >= 3 and partes[1].upper() in ("EQU", "FCB"):
                 declaradas.add(nombre)
-            elif nombre.lower() not in opcodes:
+            elif len(partes) == 1 or partes[1].upper() not in ("EQU", "FCB", "ORG", "END"):
                 etiquetas.add(nombre)
 
     return declaradas, etiquetas
@@ -67,8 +69,8 @@ def verifyMatch(file):
 
         if not lineaOriginal.startswith((" ", "\t")):
             nombre = partes[0].upper()
-            if nombre.lower() in opcodes:
-                errores.append(f"Línea {contadorLineas}: mnemónico '{partes[0]}' debe ir precedido de al menos un espacio o tabulación")
+            if nombre.lower() in opcodes and nombre not in etiquetas:
+                errores.append(f"Línea {contadorLineas}: Error 009 mnemónico '{partes[0]}' debe ir precedido de al menos un espacio o tabulación")
                 continue
 
             etiqueta = partes[0]
@@ -95,7 +97,7 @@ def verifyMatch(file):
         if mnemonico and (mnemonico.isupper() or mnemonico.islower()):
             match = mnemonico.lower() in opcodes
             if not match and not esEtiqueta:
-                errores.append(f"Línea {contadorLineas}: no se encontró el mnemónico '{mnemonico}'")
+                errores.append(f"Línea {contadorLineas}: Error 004 no se encontró el mnemónico '{mnemonico}'")
 
         for operando in operandos:
             if operando.startswith(("#", "$")):
@@ -105,17 +107,23 @@ def verifyMatch(file):
             if not operando_limpio.isalpha():
                 continue
 
-            es_salto = mnemonico and mnemonico.lower() in SALTOS
+            es_ref_etiqueta = mnemonico and mnemonico.lower() in REFS_ETIQUETA
 
-            if es_salto:
+            if es_ref_etiqueta:
+                if operando_limpio in etiquetas:
+                    continue
                 if operando_limpio not in etiquetas:
-                    errores.append(f"Línea {contadorLineas}: etiqueta '{operando_limpio}' no declarada")
+                    errores.append(f"Línea {contadorLineas}: Error 003 etiqueta '{operando_limpio}' no declarada")
             else:
+                if operando_limpio in declaradas:
+                    continue
+                if operando_limpio.lower() in opcodes:
+                    continue 
                 if operando_limpio not in declaradas:
-                    errores.append(f"Línea {contadorLineas}: variable o constante '{operando_limpio}' no declarada")
+                    errores.append(f"Línea {contadorLineas}: Error 001 variable o constante '{operando_limpio}' no declarada")
 
     if not tieneEnd:
-        errores.append("Error: falta la directiva END al final del programa")
+        errores.append("Error 010: falta la directiva END al final del programa")
     
     if len(errores) == 0:
         return "Compilación exitosa", [], orgs
