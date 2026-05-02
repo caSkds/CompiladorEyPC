@@ -1,4 +1,4 @@
-RUTA = "codigos_de_ejemplo/EXEMPLO.ASC"
+RUTA = "codigos_de_ejemplo/SALTO.ASC"
 
 from OpcodeMatch import verifyMatch
 from OperatorValidation import printFile
@@ -24,12 +24,17 @@ def main():
         print("  ERRORES DE COMPILACIÓN")
         for error in erroresCombinados:
             print(f"  {error}")
-        print(f"\n{len(erroresCombinados)} error(es) encontrado(s). Compilación abortada.")
+        print(f"\n{len(erroresCombinados)} error(es) encontrado(s).")
     else: 
+        errores = mg.compileFile(RUTA)
+        if errores:
+            print("  ERRORES DE COMPILACIÓN")
+            for error in errores:
+                print(f"  {error}")
+            print(f"\n{len(errores)} error(es) encontrado(s).")
+            return
+        
         print("Validación exitosa. Generando código máquina...\n")
-
-        mg.compileFile(RUTA)
-
         rutaSalida = RUTA.rsplit(".", 1)[0] + ".LST"
 
         resultado = mg.generateOutput(rutaSalida)

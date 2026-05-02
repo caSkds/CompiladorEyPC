@@ -69,7 +69,7 @@ def verifyMatch(file):
 
         if not lineaOriginal.startswith((" ", "\t")):
             nombre = partes[0].upper()
-            if nombre.lower() in opcodes and nombre not in etiquetas:
+            if nombre.lower() in opcodes:
                 errores.append(f"Línea {contadorLineas}: Error 009 mnemónico '{partes[0]}' debe ir precedido de al menos un espacio o tabulación")
                 continue
 

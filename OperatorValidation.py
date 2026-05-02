@@ -91,6 +91,19 @@ def printFile(RUTA):
         if len(operands) > 1 and operands[1].startswith("#"):
             if currOperandList[1] == 0:
                 errores.append(f"Línea {lineCounter}: Error 006 Instrucción no lleva operandos")
+            else:
+               
+                valor_str = operands[1][1:]
+                if valor_str.startswith("$"):
+                    valor_str = valor_str[1:]
+                elif valor_str.startswith("%"):
+                    valor_str = format(int(valor_str[1:], 2), "X")
+                elif valor_str.startswith("&"):
+                    valor_str = format(int(valor_str[1:], 8), "X")
+                bytes_esperados = currOperandList[1] - 1  # -1 por el opcode
+                bytes_operando = (len(valor_str) + 1) // 2
+                if bytes_operando > bytes_esperados:
+                    errores.append(f"Línea {lineCounter}: Error 007 Magnitud de operando errónea")
             continue
         #Indexed addressing with respect to X and Y
         for i in operands:

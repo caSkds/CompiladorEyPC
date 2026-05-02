@@ -58,7 +58,8 @@ compiledOperands = []
 toCompileOperands = []
 variables = []
 subroutines = []
-instructionList = []  # lista de tuplas (etiqueta, opcode, [operandos_hex], fuente)
+instructionList = [] # lista de tuplas (etiqueta, opcode, [operandos_hex], fuente)
+errores = []
 
 START_ADDRESS = ""
 
@@ -101,24 +102,18 @@ def convertOperand(operand):
     return returnString
 
 def compileInstructions():
-    """
-    # Compila instrucciones y registra posicion de subrutinas en bytes reales
-    # Genera instructionList: lista de tuplas (etiqueta, opcode, [operandos], linea_fuente)
-    """
     global lineas, variables, operandDict, subroutines, instructionList
+    byteCount = 0  # <-- contador de bytes reales
     for line in lineas:
         lineaOriginal = line.rstrip("\r\n")
         operands = line.split()
-        # Skipping empty lines and comments
         if len(operands) == 0 or operands[0].startswith("*"):
             continue
-        # Remove inline comments
         if "*" in operands:
             operands = operands[:operands.index("*")]
         if len(operands) == 0:
             continue
 
-        # Determine if line starts with a label or is indented
         lineStartsWithSpace = line.startswith((" ", "\t"))
 
         if lineStartsWithSpace:
@@ -128,20 +123,17 @@ def compileInstructions():
         else:
             etiqueta = operands[0]
             if len(operands) < 2:
-                # Linea solo con etiqueta - registrar posicion actual en bytes
                 for s in subroutines:
                     if s.name == etiqueta:
-                        s.posicion = len(toCompileOperands)
+                        s.posicion = byteCount
                 instructionList.append((etiqueta, None, [], ""))
                 continue
             mnemonico = operands[1]
             resto = operands[2:]
-            # Registrar posicion de la etiqueta antes de compilar su instruccion
             for s in subroutines:
                 if s.name == etiqueta:
-                    s.posicion = len(toCompileOperands)
+                    s.posicion = byteCount
 
-        # Skip directives
         if mnemonico.upper() in ("ORG", "EQU", "FCB", "END"):
             if mnemonico.upper() == "ORG" and len(resto) > 0:
                 global START_ADDRESS
@@ -149,7 +141,6 @@ def compileInstructions():
                     START_ADDRESS = convertOperand(resto[0])
             continue
 
-        # Skip if mnemonic is not in opcode dictionary
         if mnemonico.lower() not in operandDict:
             continue
 
@@ -159,12 +150,11 @@ def compileInstructions():
         instruccion = [mnemonico] + tokens
         opcode = getOpcode(instruccion)
         operandos_hex = []
-        # Capture operand hex values without appending to toCompileOperands yet
         for i in instruccion[1:]:
             if i == 'X' or i == 'Y':
                 continue
             if any(s.name == i for s in subroutines):
-                operandos_hex.append(i)  # placeholder, resolved later
+                operandos_hex.append(i)
             else:
                 operandos_hex.append(convertOperand(i))
 
@@ -172,10 +162,13 @@ def compileInstructions():
         for op in operandos_hex:
             toCompileOperands.append(op)
 
-        # Build source text for right column (mnemonic + original operands)
+        # Contar bytes reales de esta instruccion
+        opcode_bytes = len(opcode) // 2 if isinstance(opcode, str) else 1
+        operando_bytes = sum(len(op) // 2 for op in operandos_hex if isinstance(op, str) and op)
+        byteCount += opcode_bytes + operando_bytes 
+
         fuenteTexto = mnemonico + (" " + " ".join(resto) if resto else "")
         instructionList.append((etiqueta, opcode, operandos_hex, fuenteTexto))
-
 
 
 
@@ -334,32 +327,41 @@ def base2Compliment(number):
 
 
 def compileInstructionSet(preCompilation):
-    global compiledOperands, instructionList, subroutines
+    global compiledOperands, instructionList, subroutines, errores
 
     position = -1
+    bytePosition = 0
+
+    branchInstructions = [
+        "BRA","BEQ","BNE","BMI","BPL",
+        "BCC","BCS","BVC","BVS","BHI","BLS"
+    ]
 
     for i in preCompilation:
         position += 1
-        try:
-            mnemonico = instructionList[position][3].split()[0].upper()
-        except:
-            mnemonico = ""
 
-        branchInstructions = [
-            "BRA","BEQ","BNE","BMI","BPL",
-            "BCC","BCS","BVC","BVS","BHI","BLS"
-        ]
+        if isinstance(i, str) and i not in [s.name for s in subroutines]:
+            bytePosition += len(i) // 2 if len(i) > 0 else 1
 
         if any(subroutine.name == i for subroutine in subroutines):
+            mnemonico = ""
+            for entrada in instructionList:
+                if i in entrada[2]:
+                    mnemonico = entrada[3].split()[0].upper() if entrada[3] else ""
+                    break
+
             if mnemonico in branchInstructions:
-                salto = subRoutineHex(i, position)
-
-                if salto == False:
-                    print(f"Error 007: Subrutina {i} fuera de rango")
+                for s in subroutines:
+                    if s.name == i:
+                        skips = s.posicion - (bytePosition + 1)
+                        break
+                if skips > 127 or skips < -128:
+                    errores.append(f"Subrutina {"i"}: Error 008 Salto relativo muy lejano")
                     return False
-
-                compiledOperands.append(salto)
-
+                if skips >= 0:
+                    compiledOperands.append(format(skips, '02X'))
+                else:
+                    compiledOperands.append(format(skips & 0xFF, '02X'))
             else:
                 for s in subroutines:
                     if s.name == i:
@@ -385,7 +387,7 @@ def compileFile(ruta=None):
     # Función principal del módulo, se encarga de compilar el código
     - Recorre cada línea del código, y dependiendo del tipo de instrucción, la compila y la agrega a la lista de instrucciones compiladas
     """
-    global lineas, compiledOperands, toCompileOperands, variables, subroutines, instructionList, START_ADDRESS
+    global lineas, compiledOperands, toCompileOperands, variables, subroutines, instructionList, START_ADDRESS, errores
     if ruta:
         with open(ruta, "r") as f:
             lineas = f.readlines()
@@ -395,9 +397,11 @@ def compileFile(ruta=None):
     variables = []
     subroutines = []
     instructionList = []
+    errores = []
     START_ADDRESS = ""
     preCompile()
     compileInstructionSet(toCompileOperands)
+    return errores
 
 def generateOutput(outputPath=None):
     """
