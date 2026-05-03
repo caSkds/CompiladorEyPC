@@ -38,7 +38,7 @@ def main():
         
         # Generador LST
         rutaLST = RUTA.rsplit(".", 1)[0] + ".LST"
-        resultadoLST = mg.generateOutput(rutaLST)
+        resultadoLST = mg.generateOutput(rutaLST, erroresCombinados)
 
         print(resultadoLST)
         print(f"\nArchivo generado: {rutaLST}")

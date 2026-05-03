@@ -403,7 +403,7 @@ def compileFile(ruta=None):
     compileInstructionSet(toCompileOperands)
     return errores
 
-def generateOutput(outputPath=None):
+def generateOutput(outputPath=None, errores=None):
     """
     # Genera el archivo de salida con formato:
     #                     ETIQUETA
@@ -463,6 +463,11 @@ def generateOutput(outputPath=None):
 
         lines_out.append(left_col + fuente)
         currentAddress += n_bytes
+
+    if errores:
+        lines_out.append("\nERRORES:")
+    for e in errores:
+        lines_out.append(e)
 
     resultado = "\n".join(lines_out)
 
