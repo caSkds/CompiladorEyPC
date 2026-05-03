@@ -35,12 +35,19 @@ def main():
             return
         
         print("Validación exitosa. Generando código máquina...\n")
-        rutaSalida = RUTA.rsplit(".", 1)[0] + ".LST"
+        
+        # Generador LST
+        rutaLST = RUTA.rsplit(".", 1)[0] + ".LST"
+        resultadoLST = mg.generateOutput(rutaLST)
 
-        resultado = mg.generateOutput(rutaSalida)
+        print(resultadoLST)
+        print(f"\nArchivo generado: {rutaLST}")
 
-        print(resultado)
-        print(f"\nArchivo generado: {rutaSalida}")
+        # Generador S19
+        rutaS19 = RUTA.rsplit(".", 1)[0] + ".S19"
+        resultadoS19 = mg.generateS19(rutaS19)
+
+        print(f"Archivo generado: {rutaS19}")
 
 
 if __name__ == "__main__":

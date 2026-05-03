@@ -466,6 +466,38 @@ def generateOutput(outputPath=None):
 
     resultado = "\n".join(lines_out)
 
+def generateS19(outputPath=None):
+    """Genera archivo S19"""
+    global compiledOperands, START_ADDRESS
+
+    try:
+        address = int(START_ADDRESS, 16)
+    except:
+        address = 0x8000
+
+    def checksum(bytes_list):
+        total = sum(bytes_list)
+        return (~total) & 0xFF
+    
+    records = []
+    i = 0
+
+    while i < len(compiledOperands):
+        chunk = compiledOperands[i:i+16]  # máx 16 bytes 
+        byte_vals = [int(b, 16) for b in chunk if b]
+        count = len(byte_vals) + 3  # addr(2) + checksum(1)
+        record = [count, (address >> 8) & 0xFF, address & 0xFF] + byte_vals
+        chk = checksum(record)
+        line = "S1" + "".join(f"{b:02X}" for b in record) + f"{chk:02X}"
+        records.append(line)
+        address += len(byte_vals)
+
+        i += 16
+
+    # Registro final (End Of File)
+    records.append("S9030000FC")
+    resultado = "\n".join(records)
+
     if outputPath:
         with open(outputPath, "w") as f:
             f.write(resultado)
