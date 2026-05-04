@@ -471,6 +471,12 @@ def generateOutput(outputPath=None, errores=None):
 
     resultado = "\n".join(lines_out)
 
+    if outputPath:
+        with open(outputPath, "w") as f:
+            f.write(resultado)
+
+    return resultado
+
 def generateS19(outputPath=None):
     """Genera archivo S19"""
     global compiledOperands, START_ADDRESS
@@ -502,7 +508,7 @@ def generateS19(outputPath=None):
     # Registro final (End Of File)
     records.append("S9030000FC")
     resultado = "\n".join(records)
-
+    
     if outputPath:
         with open(outputPath, "w") as f:
             f.write(resultado)
