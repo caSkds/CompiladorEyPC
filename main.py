@@ -1,4 +1,4 @@
-RUTA = "codigos_de_ejemplo/PRUEBA.ASC"
+RUTA = "codigos_de_ejemplo/EXEMPLO.ASC"
 
 from OpcodeMatch import verifyMatch
 from OperatorValidation import printFile
