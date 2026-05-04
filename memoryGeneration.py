@@ -1,5 +1,5 @@
 import json
-
+import memoryGeneration as mg
 RUTA = ""
 
 class programVar:
@@ -429,7 +429,7 @@ def generateOutput(outputPath=None, errores=None):
 
         operandos_resueltos = []
         for op in operandos_hex:
-            if any(s.name == op for s in subroutines):
+            if any(s.name == op for s in mg.subroutines):
                 # calcular salto relativo
                 skips = None
                 for s in subroutines:
@@ -466,8 +466,8 @@ def generateOutput(outputPath=None, errores=None):
 
     if errores:
         lines_out.append("\nERRORES:")
-    for e in errores:
-        lines_out.append(e)
+        for e in errores:
+            lines_out.append(e)
 
     resultado = "\n".join(lines_out)
 

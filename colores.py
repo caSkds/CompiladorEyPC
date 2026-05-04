@@ -1,14 +1,14 @@
+import memoryGeneration as mg
 def generateHTML(outputPath=None):
-    global instructionList, START_ADDRESS, subroutines
 
     try:
-        currentAddress = int(START_ADDRESS, 16)
+        currentAddress = int(mg.START_ADDRESS, 16)
     except:
         currentAddress = 0x8000
 
     lines_out = []
 
-    for (etiqueta, opcode, operandos_hex, fuente) in instructionList:
+    for (etiqueta, opcode, operandos_hex, fuente) in mg.instructionList:
 
         if opcode is None:
             lines_out.append(f"<div style='margin-left:200px'>{etiqueta}</div>")
@@ -24,7 +24,7 @@ def generateHTML(outputPath=None):
         # ===== OPERANDOS =====
         operandos_resueltos = []
         for op in operandos_hex:
-            if any(s.name == op for s in subroutines):
+            if any(s.name == op for s in mg.subroutines):
                 operandos_resueltos.append("??")
             else:
                 operandos_resueltos.append(op.upper() if op else "??")

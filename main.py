@@ -1,8 +1,9 @@
-RUTA = "codigos_de_ejemplo/ERRORES.ASC"
+RUTA = "codigos_de_ejemplo/PRUEBA.ASC"
 
 from OpcodeMatch import verifyMatch
 from OperatorValidation import printFile
 import memoryGeneration as mg
+import colores as htmlGen
 
 
 def main():
@@ -48,6 +49,11 @@ def main():
         resultadoS19 = mg.generateS19(rutaS19)
 
         print(f"Archivo generado: {rutaS19}")
+
+        # Generador HTML (Colores)
+        rutaHTML = RUTA.rsplit(".", 1)[0] + ".HTML"
+        resultadoHTML = htmlGen.generateHTML(rutaHTML)
+        print(f"Archivo generado: {rutaHTML}")
 
 
 if __name__ == "__main__":
